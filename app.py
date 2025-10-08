@@ -1,5 +1,5 @@
 # File: app.py
-# Harsha's Career Compass - New Version
+# Roadmap Assistant
 
 import os
 import json
@@ -12,7 +12,7 @@ from reportlab.lib import colors
 from io import BytesIO
 from dotenv import load_dotenv
 
-# Load environment variables from a .env file
+# Load environment variables from a .env file for local development
 load_dotenv()
 
 app = Flask(__name__, template_folder='templates')
@@ -32,8 +32,9 @@ def generate_ai_plan(goal, skill_level, skills_to_learn, hours_per_week):
         print(f"API Key Configuration Error: {e}")
         return None
 
+    # A more robust prompt for the AI
     prompt = f"""
-    You are an expert career coach. Your task is to generate ONLY a valid JSON object. Do not include markdown formatting like ```json or any text before or after the JSON object.
+    You are an expert career coach. Your task is to generate ONLY a valid JSON object. Do not include any text, explanations, or markdown formatting like ```json before or after the JSON object.
 
     The JSON must have one root key: "learning_plan". This key will contain an array of 8 objects, one for each week.
     Each weekly object must have these keys: "week", "topic", "details" (a list of strings), and "resources" (a list of strings).
@@ -46,10 +47,16 @@ def generate_ai_plan(goal, skill_level, skills_to_learn, hours_per_week):
     """
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        generation_config = genai.types.GenerationConfig(response_mime_type="application/json")
+        # ** THE FIX: Using the correct, standard model name 'gemini-pro' **
+        model = genai.GenerativeModel('gemini-pro')
         
-        print("--- Sending Prompt to Gemini ---")
+        # This configuration helps ensure the output is clean JSON
+        generation_config = genai.types.GenerationConfig(
+            response_mime_type="application/json",
+            temperature=0.7 
+        )
+        
+        print("--- Sending Prompt to Gemini with model 'gemini-pro' ---")
         response = model.generate_content(prompt, generation_config=generation_config)
         print("--- Received Response ---")
         
@@ -63,13 +70,13 @@ def generate_ai_plan(goal, skill_level, skills_to_learn, hours_per_week):
         return None
 
 def create_pdf(plan_data):
-    """Generates a PDF from the plan data."""
+    """Generates a PDF from the plan data with improved styling."""
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=50, bottomMargin=50, leftMargin=50, rightMargin=50)
     styles = getSampleStyleSheet()
     story = []
 
-    title = Paragraph("Your Custom Career Compass Plan", styles['h1'])
+    title = Paragraph("Your Roadmap Assistant Plan", styles['h1'])
     story.append(title)
     story.append(Spacer(1, 24))
 
@@ -120,8 +127,9 @@ def download_pdf():
     return Response(
         pdf_buffer,
         mimetype='application/pdf',
-        headers={'Content-Disposition': 'attachment;filename=Career_Compass_Plan.pdf'}
+        headers={'Content-Disposition': 'attachment;filename=Roadmap_Assistant_Plan.pdf'}
     )
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
