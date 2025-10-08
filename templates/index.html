@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harsha's Career Compass</title>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { backdrop-filter: blur(10px) saturate(180%); -webkit-backdrop-filter: blur(10px) saturate(180%); }
+        .loader { border-top-color: #fcd34d; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-900 via-gray-800 to-black opacity-80 z-0"></div>
+
+    <main class="w-full max-w-6xl mx-auto z-10 transition-all duration-500" id="main-content">
+        <!-- Input Form Section -->
+        <div id="form-section" class="w-full max-w-2xl mx-auto">
+            <div class="card bg-gray-800/60 border border-gray-700/50 rounded-2xl shadow-2xl p-8">
+                <h1 class="text-3xl font-bold text-center text-amber-300 mb-2">Harsha's Career Compass</h1>
+                <p class="text-gray-400 text-center mb-8">Enter your details below to generate a personalized 8-week learning plan.</p>
+                
+                <form id="plan-form" class="space-y-6">
+                    <div>
+                        <label for="goal" class="block text-sm font-medium text-gray-300">Your Career Goal</label>
+                        <input type="text" id="goal" placeholder="e.g., Full-Stack Web Developer" class="mt-1 block w-full bg-gray-700/50 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-400 transition" required>
+                    </div>
+                    <div>
+                        <label for="skillLevel" class="block text-sm font-medium text-gray-300">Current Skill Level</label>
+                        <select id="skillLevel" class="mt-1 block w-full bg-gray-700/50 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-400 transition" required>
+                            <option>Beginner</option>
+                            <option>Intermediate</option>
+                            <option>Advanced</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="skills" class="block text-sm font-medium text-gray-300">Skills to Learn</label>
+                        <input type="text" id="skills" placeholder="e.g., React, Node.js, Databases" class="mt-1 block w-full bg-gray-700/50 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-400 transition" required>
+                    </div>
+                    <div>
+                        <label for="hours" class="block text-sm font-medium text-gray-300">Hours Per Week</label>
+                        <input type="number" id="hours" placeholder="e.g., 10" class="mt-1 block w-full bg-gray-700/50 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-400 transition" required>
+                    </div>
+                    <button type="submit" id="generate-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-105 flex items-center justify-center">
+                        <span id="btn-text">Generate My Plan</span>
+                        <div id="loader" class="loader w-5 h-5 rounded-full border-2 border-gray-900/50 ml-3 hidden"></div>
+                    </button>
+                </form>
+                 <div id="error-message" class="mt-4 text-center text-red-400 font-medium hidden"></div>
+            </div>
+        </div>
+
+        <!-- Plan Display Section -->
+        <div id="plan-section" class="hidden mt-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-amber-300">Your 8-Week Learning Plan</h2>
+                <div>
+                    <button id="download-btn" class="bg-gray-700 hover:bg-gray-600 text-amber-300 font-semibold py-2 px-5 rounded-lg shadow-md transition mr-2">Download PDF</button>
+                    <button id="start-over-btn" class="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 px-5 rounded-lg shadow-md transition">Start Over</button>
+                </div>
+            </div>
+            <div id="plan-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Weekly plan cards will be inserted here by JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const planForm = document.getElementById('plan-form');
+        const generateBtn = document.getElementById('generate-btn');
+        const btnText = document.getElementById('btn-text');
+        const loader = document.getElementById('loader');
+        const errorMessage = document.getElementById('error-message');
+        
+        const formSection = document.getElementById('form-section');
+        const planSection = document.getElementById('plan-section');
+        const planGrid = document.getElementById('plan-grid');
+
+        const downloadBtn = document.getElementById('download-btn');
+        const startOverBtn = document.getElementById('start-over-btn');
+
+        let generatedPlanData = null;
+
+        planForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                goal: document.getElementById('goal').value,
+                skillLevel: document.getElementById('skillLevel').value,
+                skills: document.getElementById('skills').value,
+                hours: document.getElementById('hours').value,
+            };
+
+            // UI feedback for loading
+            btnText.textContent = 'Generating...';
+            loader.classList.remove('hidden');
+            generateBtn.disabled = true;
+            errorMessage.classList.add('hidden');
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Something went wrong on the server.');
+                }
+
+                const data = await response.json();
+                generatedPlanData = data;
+                displayPlan(data.learning_plan);
+
+            } catch (error) {
+                console.error('Error generating plan:', error);
+                errorMessage.textContent = `Oops! ${error.message}`;
+                errorMessage.classList.remove('hidden');
+                resetFormState();
+            }
+        });
+
+        function displayPlan(plan) {
+            planGrid.innerHTML = ''; // Clear previous results
+            plan.forEach(week => {
+                const card = document.createElement('div');
+                card.className = 'card bg-gray-800/60 border border-gray-700/50 rounded-2xl p-6 flex flex-col space-y-4 h-full';
+                
+                let detailsHtml = week.details.map(d => `<li class="text-gray-400 text-sm">${d}</li>`).join('');
+                let resourcesHtml = week.resources.map(r => `<li class="text-gray-400 text-sm">${r}</li>`).join('');
+
+                card.innerHTML = `
+                    <div>
+                        <p class="text-sm font-semibold text-amber-400">${week.week}</p>
+                        <h3 class="text-lg font-bold text-white mt-1">${week.topic}</h3>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-200 mb-2">Details:</h4>
+                        <ul class="list-disc list-inside space-y-1">${detailsHtml}</ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-200 mb-2">Resources:</h4>
+                        <ul class="list-disc list-inside space-y-1">${resourcesHtml}</ul>
+                    </div>
+                `;
+                planGrid.appendChild(card);
+            });
+
+            // Switch views
+            formSection.classList.add('hidden');
+            planSection.classList.remove('hidden');
+        }
+
+        function resetFormState() {
+            btnText.textContent = 'Generate My Plan';
+            loader.classList.add('hidden');
+            generateBtn.disabled = false;
+        }
+
+        downloadBtn.addEventListener('click', async () => {
+            if (!generatedPlanData) return;
+            downloadBtn.textContent = 'Preparing...';
+            downloadBtn.disabled = true;
+
+            try {
+                const response = await fetch('/download_pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(generatedPlanData),
+                });
+                if (!response.ok) throw new Error('PDF generation failed.');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'Career_Compass_Plan.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                console.error('Error downloading PDF:', error);
+                alert('Could not download the PDF.');
+            } finally {
+                downloadBtn.textContent = 'Download PDF';
+                downloadBtn.disabled = false;
+            }
+        });
+
+        startOverBtn.addEventListener('click', () => {
+            planSection.classList.add('hidden');
+            formSection.classList.remove('hidden');
+            planForm.reset();
+            resetFormState();
+            generatedPlanData = null;
+        });
+
+    </script>
+</body>
+</html>
