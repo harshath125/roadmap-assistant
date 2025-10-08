@@ -47,8 +47,8 @@ def generate_ai_plan(goal, skill_level, skills_to_learn, hours_per_week):
     """
     
     try:
-        # ** THE FIX: Using the correct, standard model name 'gemini-pro' **
-        model = genai.GenerativeModel('gemini-pro')
+        # ** THE FIX: Using the correct, stable model name 'gemini-1.0-pro' **
+        model = genai.GenerativeModel('gemini-1.0-pro')
         
         # This configuration helps ensure the output is clean JSON
         generation_config = genai.types.GenerationConfig(
@@ -56,7 +56,7 @@ def generate_ai_plan(goal, skill_level, skills_to_learn, hours_per_week):
             temperature=0.7 
         )
         
-        print("--- Sending Prompt to Gemini with model 'gemini-pro' ---")
+        print("--- Sending Prompt to Gemini with model 'gemini-1.0-pro' ---")
         response = model.generate_content(prompt, generation_config=generation_config)
         print("--- Received Response ---")
         
